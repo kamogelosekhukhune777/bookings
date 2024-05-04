@@ -1,0 +1,34 @@
+# Build the Go Binary.
+FROM golang:1.22 as build_bookings
+
+#CGO is a tool in Go that allows Go code to call C code and vice versa. It's often used when 
+#integrating Go with C libraries or when platform-specific optimizations are needed.
+#...
+#This enables CGO, allowing Go to interact with C code.
+ENV CGO_ENABLED 0
+
+# Copy the source code into the container.
+COPY . /bookings
+
+# Build the bookings binary.
+WORKDIR /bookings/app/services/bookings
+
+#=============================================================================
+# Run the Go Binary in Alpine.
+FROM alpine:3.19
+
+# Create a group and user within the container
+RUN addgroup -g 1000 -S bookings && \
+    adduser -u 1000 -h /reservertionist -G bookings -S bookings
+
+# Copy the binary from a previous build stage and set ownership
+COPY --from=build_bookings --chown=bookings:bookings /bookings/app/services/bookings /bookings/
+
+# Set the working directory
+WORKDIR /bookings
+
+# Optional: Specify the user to run the container as
+USER bookings
+
+# Default command to run the binary
+CMD ["./bookings"]
